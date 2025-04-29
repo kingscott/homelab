@@ -1,8 +1,2 @@
-# Wallabag
-wallabag/data/
-
-# nginx proxy manager
-proxy/data
-proxy/letsencrypt
 
 

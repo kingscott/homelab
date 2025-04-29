@@ -180,8 +180,16 @@ sudo systemctl restart nmbd
 ```
 9. Allow samba on firewall if you run into any issues.
 ```
+sudo ufw enable
 sudo ufw allow Samba
-sudo ufw status
+sudo ufw default deny incoming
+sudo ufw default allow outgoing
+sudo ufw allow 22/tcp                # For ssh
+sudo ufw allow 80/tcp                # For nginx (http)
+sudo ufw allow 443/tcp               # For nginx (https)
+sudo ufw allow from 192.168.5.0/22   # For roon
+sudo ufw reload
+sudo ufw status numbered
 ```
 10. Install wsdd for Windows discorvery
 ```
