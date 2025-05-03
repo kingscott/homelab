@@ -187,7 +187,8 @@ sudo ufw default allow outgoing
 sudo ufw allow 22/tcp                # For ssh
 sudo ufw allow 80/tcp                # For nginx (http)
 sudo ufw allow 443/tcp               # For nginx (https)
-sudo ufw allow from 192.168.5.0/22   # For roon
+sudo ufw allow from 192.168.5.0/22   # For roon server locally
+sudo ufw allow 55000/tcp             # Open port for roon arc
 sudo ufw reload
 sudo ufw status numbered
 ```
