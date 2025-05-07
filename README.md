@@ -142,6 +142,18 @@ This is my configuration:
    name resolve order = bcast host
    hosts allow = 192.168.0.0/22
    hosts deny = 0.0.0.0/0
+[lightbox]
+   path = /lightbox
+   force user = kingscott
+   force group = kingscott
+   create mask = 0774
+   force create mode = 0774
+   directory mask = 0775
+   force directory mode = 0775
+   browseable = yes
+   writable = yes
+   read only = no
+   guest ok = no
 [music]
    path = /music
    force user = kingscott
