@@ -59,6 +59,10 @@ pages:
                   type: ping
                   options:
                   ping: 100.84.97.123
+              - title: TrueNAS
+                url: https://nas.u00dok.ca/
+                check-url: http://192.168.5.103/
+                icon: di:truenas
               - title: Wallabag
                 url: https://walla.u00dok.ca/
                 check-url: https://walla.u00dok.ca/
