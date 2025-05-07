@@ -113,6 +113,7 @@ Great video resource by KeepItTechie: [https://www.youtube.com/watch?v=2gW4rWhur
 
 3. Set permissions of mount points created eariler.
 ```
+sudo chown -R kingscott:kingscott /lightbox
 sudo chown -R kingscott:kingscott /music
 sudo chown -R kingscott:kingscott /docker
 ```
