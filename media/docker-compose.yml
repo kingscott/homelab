@@ -1,0 +1,178 @@
+# Compose file for the *arr stack. Configuration files are stored 
+# in a docker folder mounted in root. Change to bind mounts if needed.
+# All containers are ran with user and group ids of the main user and 
+# share to aviod permissions issues of downloaded files, please refer
+# the read me file for more information.
+
+networks:
+  servarrnetwork:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+services:
+  gluetun:
+    image: qmcgaw/gluetun
+    container_name: gluetun
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    networks:
+      servarrnetwork:
+        ipv4_address: 172.20.0.2
+    ports:
+      - 9091:9091 # qbittorrent web interface
+      - 6881:6881 # qbittorrent torrent port
+      - 9696:9696 # prowlarr
+    volumes:
+      - /docker/gluetun:/gluetun
+      - ./protonvpn.conf:/gluetun/config.conf:ro # VPN config from provider
+    environment:
+      - VPN_SERVICE_PROVIDER=custom
+      - VPN_TYPE=wireguard
+      - VPN_ENDPOINT_IP=<endpoint> # "Endpoint" under [Peer] in WG Config
+      - VPN_ENDPOINT_PORT=<port> # should be the default 51820 but can confirm by seeing the port after IP in "Endpoint"
+      - FIREWALL_VPN_INPUT_PORTS=9091,6881,9696
+      - FIREWALL_OUTBOUND_SUBNETS=192.168.0.0/24 # add if prowlarr wont connect to other arr apps, change to your specific subnet
+      - WIREGUARD_PRIVATE_KEY=<wireguard private key>
+      - WIREGUARD_PUBLIC_KEY=<wireguard public key>
+      - WIREGUARD_ADDRESSES=<address> # "Address" under [Interface] in WG Config
+      - VPN_DNS_ADDRESS=<dns address> # "DNS" under [Interface] in WG Config
+      - VPN_PORT_FORWARDING=on
+      - VPN_PORT_FORWARDING_PROVIDER=protonvpn
+      - TZ=Canada/Toronto
+      - UPDATER_PERIOD=24h
+      - HEALTH_VPN_DURATION_INITIAL=120s
+      - LOG_LEVEL=debug
+    #healthcheck:
+    #  test: ping -c 1 www.google.com || exit 1
+    #  interval: 60s
+    #  timeout: 30s
+    #  retries: 5
+    restart: unless-stopped
+
+# This is a new addition since creating the tutorial video on this stack. 
+# See the 'qBittorrent Stalls with VPN Timeout' section for more information.
+  deunhealth:
+    image: qmcgaw/deunhealth
+    container_name: deunhealth
+    network_mode: "none"
+    environment:
+      - LOG_LEVEL=info
+      - HEALTH_SERVER_ADDRESS=127.0.0.1:9999
+      - TZ=Canada/Toronto
+    restart: always
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+
+# Healthcheck was added to work with deunhealth to restart container
+# on unhealthy status. labels allows deunhealth to monitor.
+  qbittorrent:
+    image: lscr.io/linuxserver/qbittorrent:latest
+    container_name: qbittorrent
+    restart: unless-stopped
+    labels:
+      - deunhealth.restart.on.unhealthy=true
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Canada/Toronto
+      - WEBUI_PORT=9091
+      - TORRENTING_PORT=6881
+    volumes:
+      - /docker/qbittorrent:/config
+      - /lightbox:/lightbox
+    network_mode: service:gluetun
+    healthcheck:
+        test: ping -c 1 www.google.com || exit 1
+        interval: 60s
+        retries: 3
+        start_period: 20s
+        timeout: 10s
+
+  prowlarr:
+    image: lscr.io/linuxserver/prowlarr:latest
+    container_name: prowlarr
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Canada/Toronto
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /docker/prowlarr:/config
+    restart: unless-stopped
+    network_mode: service:gluetun
+
+  sonarr:
+    image: lscr.io/linuxserver/sonarr:latest
+    container_name: sonarr
+    restart: unless-stopped
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Canada/Toronto
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /docker/sonarr:/config
+      - /lightbox:/lightbox
+    ports:
+      - 8989:8989
+    networks:
+      servarrnetwork:
+        ipv4_address: 172.20.0.3
+
+  radarr:
+    image: lscr.io/linuxserver/radarr:latest
+    container_name: radarr
+    restart: unless-stopped
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Canada/Toronto
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /docker/radarr:/config
+      - /lightbox:/lightbox
+    ports:
+      - 7878:7878
+    networks:
+      servarrnetwork:
+        ipv4_address: 172.20.0.4
+
+# TODO: Do I want this?
+#  bazarr:
+#    image: lscr.io/linuxserver/bazarr:latest
+#    container_name: bazarr
+#    restart: unless-stopped
+#    environment:
+#      - PUID=1000
+#      - PGID=1000
+#      - TZ=Canada/Toronto
+#    volumes:
+#      - /etc/localtime:/etc/localtime:ro
+#      - /docker/bazarr:/config
+#      - /data:/data
+#    ports:
+#      - 6767:6767
+#    networks:
+#      servarrnetwork:
+#        ipv4_address: 192.168.5.6
+
+# Youtube downloading and subscription service. Information not yet added to readme.md
+#  ytdl-sub:
+#    image: ghcr.io/jmbannon/ytdl-sub:latest
+#    container_name: ytdl-sub
+#    environment:
+#      - PUID=1000
+#      - PGID=1000
+#      - TZ=Canada/Toronto
+#      - DOCKER_MODS=linuxserver/mods:universal-cron
+#    volumes:
+#      - /docker/ytdl-sub/config:/config
+#      - /data/youtube:/youtube
+#    networks:
+#      servarrnetwork:
+#        ipv4_address: 192.168.5.8
+#    restart: unless-stopped
