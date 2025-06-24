@@ -39,7 +39,7 @@ pages:
                 url: https://github.com/search?q={QUERY}&type=repositories
 
           - type: monitor
-            cache: 1m
+            cache: 30s
             title: Services
             sites:
               - title: Proxmox
@@ -72,8 +72,8 @@ pages:
                 check-url: http://10.0.0.104:2283
                 icon: di:immich
               - title: Jellyfin
-                url: https://jellyfin.hopki.net/
-                check-url: http://10.0.0.100:8096
+                url: https://stream.u00dok.ca/jellyfin/
+                check-url: http://192.168.5.106:8096
                 icon: di:jellyfin
               - title: Grafana
                 url: https://grafana.hopki.net/
@@ -88,7 +88,7 @@ pages:
                   - 403
 
           - type: monitor
-            cache: 1m
+            cache: 30s
             title: Media
             sites:
               - title: Roon
@@ -100,28 +100,21 @@ pages:
                   options:
                     port: 9330
               - title: Radarr
-                url: https://arr.hopki.net/radarr
-                check-url: http://10.0.0.100:7878
+                url: https://r.u00dok.ca/radarr
+                check-url: http://192.168.5.106:7878
                 icon: di:radarr
               - title: Sonarr
-                url: https://arr.hopki.net/sonarr
-                check-url: http://10.0.0.100:8989
+                url: https://r.u00dok.ca/sonarr
+                check-url: http://192.168.5.106:8989
                 icon: di:sonarr
               - title: Prowlarr
-                url: https://arr.hopki.net/prowlarr
-                check-url: http://10.0.0.100:9696
+                url: https://r.u00dok.ca/prowlarr
+                check-url: http://192.168.5.106:9696
                 icon: di:prowlarr
               - title: qBittorrent
-                url: https://torrent.hopki.net/
-                check-url: http://10.0.0.100:8080
+                url: https://dl.u00dok.ca/
+                check-url: http://192.168.5.106:9091
                 icon: di:qbittorrent
-              - title: NZBGet
-                url: https://nzbget.hopki.net/
-                check-url: http://10.0.0.100:6789
-                icon: di:nzbget
-                alt-status-codes:
-                  - 401
-                  - 403
 
   - name: Home
     # Optionally, if you only have a single page you can hide the desktop navigation for a cleaner look
