@@ -1,0 +1,86 @@
+services:
+  mariadb:
+    image: mariadb:10.6.24
+    container_name: supernote-mariadb
+    restart: unless-stopped
+    networks:
+      - supernote-net
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: supernotedb
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    volumes:
+      - /docker/supernote/mariadb_data:/var/lib/mysql
+      - /docker/supernote/supernotedb.sql:/docker-entrypoint-initdb.d/supernotedb.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 30s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+
+  redis:
+    image: redis:7.4.7
+    container_name: supernote-redis
+    restart: unless-stopped
+    networks:
+      - supernote-net
+    command: redis-server --requirepass '${REDIS_PASSWORD}' --dir /data --dbfilename dump.rdb
+    volumes:
+      - /docker/supernote/redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 30s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  notelib:
+    image: docker.io/supernote/notelib:6.9.3
+    container_name: supernote-notelib
+    restart: unless-stopped
+    networks:
+      - supernote-net
+    depends_on:
+      mariadb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  supernote-service:
+    image: docker.io/supernote/supernote-service:25.11.04
+    container_name: supernote-service
+    restart: unless-stopped
+    networks:
+      - supernote-net
+    ports:
+      - "${SYNC_HOST_PORT:-18072}:18072"  # WebSocket port for automatic synchronization
+      - "${WEB_HOST_PORT:-19072}:8080"    # Web management interface
+    environment:
+      MYSQL_DATABASE: supernotedb
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      REDIS_HOST: supernote-redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+    volumes:
+      - /docker/supernote/sndata/recycle:/home/supernote/recycle
+      - /docker/supernote/supernote_data:/home/supernote/data
+      - /docker/supernote/sndata/logs/cloud:/home/supernote/cloud/logs
+      - /docker/supernote/sndata/logs/app:/home/supernote/logs
+      - /docker/supernote/sndata/logs/web:/var/log/nginx
+      - /docker/supernote/sndata/convert:/home/supernote/convert
+      - /etc/localtime:/etc/localtime:ro
+    depends_on:
+      mariadb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      notelib:
+        condition: service_started
+
+networks:
+  supernote-net:
+    driver: bridge
+    name: supernote-net
