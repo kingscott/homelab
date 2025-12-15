@@ -17,3 +17,12 @@ As always, reboot the machine. Verify that you can run the command `nvidia-smi`.
 Next run the same procedure on the LXC, except when you install using the `--no-kernel-module` flag. Then reboot the LXC.
 
 Finally, wget and run the patch bash script on both the host and LXC. Finally, verify that `nvidia-smi` runs on both machines. 
+
+### Troubleshooting
+
+After a major or kernel upgrade, the Nvidia driver may need to be reinstalled/repatched for the latest kernel version. Try to install the driver as noted above. You may need to use dkms to rebuild the driver:
+
+```
+dkms install nvidia/570.153.02 -k $(uname -r)
+```
+
